@@ -1,0 +1,16 @@
+# OS junk
+.DS_Store
+__MACOSX/
+
+# Python junk
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Local env & logs
+.venv/
+*.log
+
+# Keep heavy binaries out of plain Git (use LFS)
+*.db
+*.png
