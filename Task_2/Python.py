@@ -134,7 +134,7 @@ def question_2(df_scheduled, df_balances):
     return float(default_rate_percent)
 
 
-def question_3(df_balances):
+#def question_3(df_balances):
     """
     Calculate the anualized portfolio CPR (As a %) from the geometric mean SMM.
     SMM is calculated as: (Unscheduled Principal)/(Start of Month Loan Balance)
@@ -148,8 +148,8 @@ def question_3(df_balances):
         float: The anualized CPR of the loan portfolio as a percent.
 
     """
-
-    df = df_balances[df_balances["Month"] <= 12].copy()
+def question_3(df_balances):
+    df = df_balances.copy()
     df["UnscheduledPrincipal"] = (
         df["ActualRepayment"] - df["ScheduledRepayment"]
     ).clip(lower=0)
@@ -158,13 +158,15 @@ def question_3(df_balances):
         UnscheduledPrincipal=("UnscheduledPrincipal", "sum"),
         LoanBalanceStart=("LoanBalanceStart", "sum"),
     )
-    monthly["SMM"] = monthly["UnscheduledPrincipal"] / monthly["LoanBalanceStart"]
+    monthly["SMM"] = (
+        monthly["UnscheduledPrincipal"] / monthly["LoanBalanceStart"]
+    )
 
-    smm_mean = (np.prod(1 + monthly["SMM"]) ** (1 / len(monthly))) - 1
+    smm_mean = ((1 + monthly["SMM"]).prod() ** (1 / len(monthly))) - 1
     cpr_percent = (1 - (1 - smm_mean) ** 12) * 100
     return float(cpr_percent)
 
-def question_4(df_balances):
+#def question_4(df_balances):
     """
     Calculate the predicted total loss for the second year in the loan term.
     Use the equation: probability_of_default * total_loan_balance * (1 - recovery_rate).
@@ -180,6 +182,7 @@ def question_4(df_balances):
 
     """
  
+def question_4(df_balances):
     prob_default = question_1(df_balances) / 100
     remaining_balance = df_balances.loc[
         df_balances["Month"] == 12, "LoanBalanceEnd"
