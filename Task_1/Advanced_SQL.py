@@ -22,8 +22,13 @@ def question_1():
     Make use of a JOIN to find the `AverageIncome` per `CustomerClass`
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT c.CustomerClass,
+           AVG(cu.Income) AS AverageIncome
+    FROM credit c
+    JOIN customers cu ON c.CustomerID = cu.CustomerID
+    GROUP BY c.CustomerClass
+    """
     return qry
 
 
@@ -33,8 +38,14 @@ def question_2():
     Ensure consistent use of either the abbreviated or full version of each province, matching the format found in the customer table.
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT cu.Province,
+           COUNT(*) AS RejectedApplications
+    FROM loans l
+    JOIN customers cu ON l.CustomerID = cu.CustomerID
+    WHERE l.ApprovalStatus = 'Rejected'
+    GROUP BY cu.Province
+    """
     return qry
 
 
@@ -46,8 +57,23 @@ def question_3():
     Do not return the new table, just create it.
     """
 
-    qry = """____________________"""
-
+    qry = """
+    CREATE TABLE financing (
+        CustomerID INT,
+        Income REAL,
+        LoanAmount REAL,
+        LoanTerm INT,
+        InterestRate REAL,
+        ApprovalStatus TEXT,
+        CreditScore INT
+    );
+    INSERT INTO financing
+    SELECT l.CustomerID, cu.Income, l.LoanAmount, l.LoanTerm,
+           l.InterestRate, l.ApprovalStatus, c.CreditScore
+    FROM loans l
+    JOIN customers cu ON l.CustomerID = cu.CustomerID
+    JOIN credit c ON c.CustomerID = cu.CustomerID
+    """
     return qry
 
 
@@ -64,8 +90,20 @@ def question_4():
     Hint: there should be 12x CustomerID = 1.
     """
 
-    qry = """____________________"""
-
+    qry = """
+    CREATE TABLE timeline AS
+    SELECT c.CustomerID,
+           m.MonthName,
+           COALESCE(COUNT(r.RepaymentID), 0) AS NumberOfRepayments,
+           COALESCE(SUM(r.Amount), 0) AS AmountTotal
+    FROM customers c
+    CROSS JOIN months m
+    LEFT JOIN repayments r
+      ON r.CustomerID = c.CustomerID
+     AND r.MonthID = m.MonthID
+     AND CAST(STRFTIME('%H', r.RepaymentTime) AS INT) BETWEEN 6 AND 17
+    GROUP BY c.CustomerID, m.MonthName
+    """
     return qry
 
 
@@ -78,8 +116,35 @@ def question_5():
     Hint: there should be 1x CustomerID = 1
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT CustomerID,
+           SUM(CASE WHEN MonthName='January'  THEN NumberOfRepayments END) AS JanuaryRepayments,
+           SUM(CASE WHEN MonthName='January'  THEN AmountTotal END)       AS JanuaryTotal,
+           SUM(CASE WHEN MonthName='February' THEN NumberOfRepayments END) AS FebruaryRepayments,
+           SUM(CASE WHEN MonthName='February' THEN AmountTotal END)       AS FebruaryTotal,
+           SUM(CASE WHEN MonthName='March'    THEN NumberOfRepayments END) AS MarchRepayments,
+           SUM(CASE WHEN MonthName='March'    THEN AmountTotal END)       AS MarchTotal,
+           SUM(CASE WHEN MonthName='April'    THEN NumberOfRepayments END) AS AprilRepayments,
+           SUM(CASE WHEN MonthName='April'    THEN AmountTotal END)       AS AprilTotal,
+           SUM(CASE WHEN MonthName='May'      THEN NumberOfRepayments END) AS MayRepayments,
+           SUM(CASE WHEN MonthName='May'      THEN AmountTotal END)       AS MayTotal,
+           SUM(CASE WHEN MonthName='June'     THEN NumberOfRepayments END) AS JuneRepayments,
+           SUM(CASE WHEN MonthName='June'     THEN AmountTotal END)       AS JuneTotal,
+           SUM(CASE WHEN MonthName='July'     THEN NumberOfRepayments END) AS JulyRepayments,
+           SUM(CASE WHEN MonthName='July'     THEN AmountTotal END)       AS JulyTotal,
+           SUM(CASE WHEN MonthName='August'   THEN NumberOfRepayments END) AS AugustRepayments,
+           SUM(CASE WHEN MonthName='August'   THEN AmountTotal END)       AS AugustTotal,
+           SUM(CASE WHEN MonthName='September' THEN NumberOfRepayments END) AS SeptemberRepayments,
+           SUM(CASE WHEN MonthName='September' THEN AmountTotal END)       AS SeptemberTotal,
+           SUM(CASE WHEN MonthName='October'  THEN NumberOfRepayments END) AS OctoberRepayments,
+           SUM(CASE WHEN MonthName='October'  THEN AmountTotal END)       AS OctoberTotal,
+           SUM(CASE WHEN MonthName='November' THEN NumberOfRepayments END) AS NovemberRepayments,
+           SUM(CASE WHEN MonthName='November' THEN AmountTotal END)       AS NovemberTotal,
+           SUM(CASE WHEN MonthName='December' THEN NumberOfRepayments END) AS DecemberRepayments,
+           SUM(CASE WHEN MonthName='December' THEN AmountTotal END)       AS DecemberTotal
+    FROM timeline
+    GROUP BY CustomerID
+    """
     return qry
 
 
@@ -99,8 +164,18 @@ def question_6():
     Also return a result set for this table (ie SELECT * FROM corrected_customers)
     """
 
-    qry = """____________________"""
-
+    qry = """
+    CREATE TABLE corrected_customers AS
+    SELECT CustomerID,
+           Age,
+           COALESCE(
+             LAG(Age, 2) OVER (PARTITION BY Gender ORDER BY CustomerID),
+             FIRST_VALUE(Age) OVER (PARTITION BY Gender ORDER BY CustomerID)
+           ) AS CorrectedAge,
+           Gender
+    FROM customers;
+    SELECT * FROM corrected_customers
+    """
     return qry
 
 
@@ -120,6 +195,31 @@ def question_7():
     Return columns: `CustomerID`, `Age`, `CorrectedAge`, `Gender`, `AgeCategory`, `Rank`
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT cc.CustomerID,
+           cc.Age,
+           cc.CorrectedAge,
+           cc.Gender,
+           CASE
+             WHEN CorrectedAge < 20 THEN 'Teen'
+             WHEN CorrectedAge < 30 THEN 'Young Adult'
+             WHEN CorrectedAge < 60 THEN 'Adult'
+             ELSE 'Pensioner'
+           END AS AgeCategory,
+           DENSE_RANK() OVER (
+               PARTITION BY CASE
+                   WHEN CorrectedAge < 20 THEN 'Teen'
+                   WHEN CorrectedAge < 30 THEN 'Young Adult'
+                   WHEN CorrectedAge < 60 THEN 'Adult'
+                   ELSE 'Pensioner'
+               END
+               ORDER BY COALESCE(r.RepaymentCount,0) DESC
+           ) AS Rank
+    FROM corrected_customers cc
+    LEFT JOIN (
+        SELECT CustomerID, COUNT(*) AS RepaymentCount
+        FROM repayments
+        GROUP BY CustomerID
+    ) r ON cc.CustomerID = r.CustomerID
+    """
     return qry

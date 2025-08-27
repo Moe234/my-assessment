@@ -23,8 +23,16 @@ def question_1():
     Return the `Name`, `Surname` and `CustomerID`
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT Name, Surname, CustomerID
+    FROM customers
+    WHERE CustomerID IN (
+        SELECT CustomerID
+        FROM customers
+        GROUP BY CustomerID
+        HAVING COUNT(*) > 1
+    )
+    """
     return qry
 
 
@@ -33,8 +41,12 @@ def question_2():
     Return the `Name`, `Surname` and `Income` of all female customers in the dataset in descending order of income
     """
 
-    qry = """____________________"""
-
+    qry = """
+    SELECT Name, Surname, Income
+    FROM customers
+    WHERE Gender = 'Female'
+    ORDER BY Income DESC
+    """
     return qry
 
 
@@ -44,9 +56,16 @@ def question_3():
     ie 50 not 0.5
     There is only 1 loan per customer ID.
     """
-
-    qry = """____________________"""
-
+    
+    qry = """
+    SELECT LoanTerm,
+           ROUND(
+             100.0 * SUM(CASE WHEN ApprovalStatus='Approved' THEN 1 ELSE 0 END) / COUNT(*),
+             2
+           ) AS ApprovedPercent
+    FROM loans
+    GROUP BY LoanTerm
+    """
     return qry
 
 
@@ -55,17 +74,21 @@ def question_4():
     Return a breakdown of the number of customers per CustomerClass in the credit data
     Return columns `CustomerClass` and `Count`
     """
-
-    qry = """____________________"""
-
+    qry = """
+    SELECT CustomerClass, COUNT(*) AS Count
+    FROM credit
+    GROUP BY CustomerClass
+    """
     return qry
 
 
 def question_5():
     """
-    Make use of the UPDATE function to amend/fix the following: Customers with a CreditScore between and including 600 to 650 must be classified as CustomerClass C.
+    Make use of the UPDATE function to amend/fix the following: Customers with a CreditScore between and including      600 to 650 must be classified as CustomerClass C.
     """
-
-    qry = """____________________"""
-
+    qry = """
+    UPDATE credit
+    SET CustomerClass = 'C'
+    WHERE CreditScore BETWEEN 600 AND 650
+    """
     return qry

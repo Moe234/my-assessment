@@ -103,9 +103,14 @@ def question_1(df_balances):
 
     """
 
+    loan_defaults = (
+        df_balances.groupby("LoanID")
+        .apply(lambda g: (g["ActualRepayment"] < g["ScheduledRepayment"]).any())
+    )
+    default_rate_percent = loan_defaults.mean() * 100
+
     return default_rate_percent
-
-
+    
 def question_2(df_scheduled, df_balances):
     """
     Calculate the percent of loans that defaulted as per the type 2 default definition
@@ -119,7 +124,14 @@ def question_2(df_scheduled, df_balances):
 
     """
 
-    return default_rate_percent
+    unpaid = (
+        df_balances.groupby("LoanID")
+        .apply(lambda g: (g["ScheduledRepayment"] - g["ActualRepayment"]).sum())
+    )
+    total_sched = df_balances.groupby("LoanID")["ScheduledRepayment"].sum()
+    defaulted = unpaid > 0.15 * total_sched
+    default_rate_percent = defaulted.mean() * 100
+    return float(default_rate_percent)
 
 
 def question_3(df_balances):
@@ -137,8 +149,20 @@ def question_3(df_balances):
 
     """
 
-    return cpr_percent
+    df = df_balances[df_balances["Month"] <= 12].copy()
+    df["UnscheduledPrincipal"] = (
+        df["ActualRepayment"] - df["ScheduledRepayment"]
+    ).clip(lower=0)
 
+    monthly = df.groupby("Month").agg(
+        UnscheduledPrincipal=("UnscheduledPrincipal", "sum"),
+        LoanBalanceStart=("LoanBalanceStart", "sum"),
+    )
+    monthly["SMM"] = monthly["UnscheduledPrincipal"] / monthly["LoanBalanceStart"]
+
+    smm_mean = (np.prod(1 + monthly["SMM"]) ** (1 / len(monthly))) - 1
+    cpr_percent = (1 - (1 - smm_mean) ** 12) * 100
+    return float(cpr_percent)
 
 def question_4(df_balances):
     """
@@ -155,5 +179,11 @@ def question_4(df_balances):
         float: The predicted total loss for the second year in the loan term.
 
     """
-
-    return total_loss
+ 
+    prob_default = question_1(df_balances) / 100
+    remaining_balance = df_balances.loc[
+        df_balances["Month"] == 12, "LoanBalanceEnd"
+    ].sum()
+    recovery_rate = 0.80
+    total_loss = prob_default * remaining_balance * (1 - recovery_rate)
+    return float(total_loss)
