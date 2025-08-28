@@ -158,9 +158,7 @@ def question_3(df_balances):
         UnscheduledPrincipal=("UnscheduledPrincipal", "sum"),
         LoanBalanceStart=("LoanBalanceStart", "sum"),
     )
-    monthly["SMM"] = (
-        monthly["UnscheduledPrincipal"] / monthly["LoanBalanceStart"]
-    )
+    monthly["SMM"] = monthly["UnscheduledPrincipal"] / monthly["LoanBalanceStart"]
 
     smm_mean = ((1 + monthly["SMM"]).prod() ** (1 / len(monthly))) - 1
     cpr_percent = (1 - (1 - smm_mean) ** 12) * 100
